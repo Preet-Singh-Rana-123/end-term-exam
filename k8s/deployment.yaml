@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-container-app
+  labels:
+    app: end-term-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: end-term-app
+  template:
+    metadata:
+      labels:
+        app: end-term-app
+    spec:
+      containers:
+        - name: web-app
+          image: preet0001/end-term-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: end-term-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
