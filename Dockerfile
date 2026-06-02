@@ -4,8 +4,6 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm inatall
-
 COPY . .
 
 EXPOSE 5000
