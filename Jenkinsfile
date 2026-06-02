@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "dockerhubusername/hello-node"
+        IMAGE_NAME = "preet0001/hello-node"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
@@ -11,15 +11,15 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/Preet-Singh-Rana-123/end-term-exam'
+                    url: 'https://github.com/Preet-Singh-Rana-123/end-term-exam.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build -t $IMAGE_NAME:$IMAGE_TAG .
-                '''
+                sh """
+                    docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                """
             }
         }
 
@@ -27,29 +27,28 @@ pipeline {
             steps {
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
+                        credentialsId: 'docker-hub-credential',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
                     )
                 ]) {
 
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-
-                    docker push $IMAGE_NAME:$IMAGE_TAG
-                    '''
+                    sh """
+                        echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
+                        docker push $IMAGE_NAME:$IMAGE_TAG
+                    """
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                kubectl set image deployment/hello-node \
-                hello-node=$IMAGE_NAME:$IMAGE_TAG
+                sh """
+                    kubectl set image deployment/hello-node \
+                    hello-node=$IMAGE_NAME:$IMAGE_TAG
 
-                kubectl rollout status deployment/hello-node
-                '''
+                    kubectl rollout status deployment/hello-node
+                """
             }
         }
     }
