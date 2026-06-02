@@ -2,39 +2,54 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY_USER  = 'preet0001'
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        IMAGE_NAME = "dockerhubusername/hello-node"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
-        stage("Clone Git Repo") {
+
+        stage('Checkout') {
             steps {
-                git url: 'https://github.com/Preet-Singh-Rana-123/end-term-exam', branch: 'main'
+                git branch: 'main',
+                    url: 'https://github.com/Preet-Singh-Rana-123/end-term-exam'
             }
         }
 
-        stage("Build Docker Image") {
+        stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_REGISTRY_USER}/end-term-app:latest ."
+                sh '''
+                docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                '''
             }
         }
 
-        stage("Push to Docker Hub") {
+        stage('Push Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                    sh "echo '${DOCKER_PASS}' | docker login -u '${DOCKER_USER}' --password-stdin"
-                    sh "docker push ${DOCKER_REGISTRY_USER}/end-term-app:latest"
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+                    docker push $IMAGE_NAME:$IMAGE_TAG
+                    '''
                 }
             }
         }
 
-        stage("Deploy to Kubernetes") {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh """
-                    kubectl apply -f k8s/deployment.yml
-                    kubectl set image deployment/my-container-app web-app=${DOCKER_REGISTRY_USER}/end-term-app:latest
-                    kubectl rollout status deployment/my-container-app
-                """
+                sh '''
+                kubectl set image deployment/hello-node \
+                hello-node=$IMAGE_NAME:$IMAGE_TAG
+
+                kubectl rollout status deployment/hello-node
+                '''
             }
         }
     }

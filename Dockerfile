@@ -1,11 +1,7 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-
 COPY . .
-
-EXPOSE 5000
 
 CMD ["node", "app.js"]
